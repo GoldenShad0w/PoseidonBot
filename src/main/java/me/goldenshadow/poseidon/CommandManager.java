@@ -2,12 +2,16 @@ package me.goldenshadow.poseidon;
 
 import me.goldenshadow.poseidon.profile.ProfileManager;
 import me.goldenshadow.poseidon.profile.Profile;
+import me.goldenshadow.poseidon.shells.ShellManager;
+import me.goldenshadow.poseidon.shells.ShellTransaction;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +57,10 @@ public class CommandManager extends ListenerAdapter {
                 }
             }
             else if (event.getSubcommandName() != null && event.getSubcommandName().equals("leaderboard")) {
+                event.reply(new MessageCreateBuilder().addEmbeds(ShellManager.getShellLeaderboard(1)).build()).setEphemeral(true).addActionRow(
+                        Button.primary("poseidon_sh_lb_back", Emoji.fromUnicode("◀️")).asEnabled(),
+                        Button.primary("poseidon_sh_lb_forward", Emoji.fromUnicode("▶️")).asEnabled()
+                ).queue();
 
             }
         } else if (event.getName().equals("manage-shells")) {
@@ -86,7 +94,27 @@ public class CommandManager extends ListenerAdapter {
                 }
             }
             if (event.getSubcommandName() != null && event.getSubcommandName().equals("history")) {
-                //TODO
+                OptionMapping userOption = event.getOption("user");
+                if (userOption != null && userOption.getAsMember() != null) {
+                    Profile profile = ProfileManager.getProfile(userOption.getAsMember().getId());
+                    if (profile != null) {
+                        StringBuilder sb = new StringBuilder();
+                        for (ShellTransaction t : profile.getShellHistory()) {
+                            sb.append("`").append(t.toString()).append("`\n");
+                        }
+                        MessageEmbed embed = new EmbedBuilder()
+                                .setTitle(profile.getInGameName() + "'s Transaction History")
+                                .setDescription(sb.toString())
+                                .setColor(Color.YELLOW)
+                                .setAuthor("(Sorted newest to oldest)")
+                                .build();
+                        event.reply(new MessageCreateBuilder().addEmbeds(embed).build()).setEphemeral(true).queue();
+                    } else {
+                        event.reply("This user doesn't have a registered profile!").setEphemeral(true).queue();
+                    }
+                } else {
+                    event.reply("Not a valid user!").setEphemeral(true).queue();
+                }
             }
         } else if (event.getName().equals("new-member")) {
             OptionMapping userOption = event.getOption("user");

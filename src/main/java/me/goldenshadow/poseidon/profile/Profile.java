@@ -31,12 +31,16 @@ public class Profile {
 
     public void addShells(int amount, String reason) {
         shells += amount;
-        shellHistory.add(new ShellTransaction(ShellTransaction.TransactionType.ADDITION, amount, reason));
+        shellHistory.add(0, new ShellTransaction(ShellTransaction.TransactionType.ADDITION, amount, reason));
+        if (shellHistory.size() > 10) shellHistory.remove(shellHistory.size()-1);
+        ProfileManager.saveToFile();
     }
 
     public void removeShells(int amount, String reason) {
         shells -= amount;
-        shellHistory.add(new ShellTransaction(ShellTransaction.TransactionType.SUBTRACTION, amount, reason));
+        shellHistory.add(0, new ShellTransaction(ShellTransaction.TransactionType.SUBTRACTION, amount, reason));
+        if (shellHistory.size() > 10) shellHistory.remove(shellHistory.size()-1);
+        ProfileManager.saveToFile();
     }
 
     public String getInGameName() {
@@ -50,4 +54,9 @@ public class Profile {
     public String getMemberID() {
         return memberID;
     }
+
+    public List<ShellTransaction> getShellHistory() {
+        return shellHistory;
+    }
 }
+

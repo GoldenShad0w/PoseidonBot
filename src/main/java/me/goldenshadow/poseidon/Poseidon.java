@@ -1,6 +1,8 @@
 package me.goldenshadow.poseidon;
 
 import me.goldenshadow.poseidon.applications.ApplicationManager;
+import me.goldenshadow.poseidon.profile.ProfileManager;
+import me.goldenshadow.poseidon.shells.ShellManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
@@ -22,14 +24,14 @@ public class Poseidon {
     public static void main(String[] args) {
         try {
             initConstants();
-
-        } catch (IOException e) {
+            ProfileManager.loadFromFile();
+        } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
 
         api = JDABuilder.createDefault(Constants.BOT_TOKEN)
                 .setActivity(Activity.watching("the seven seas!"))
-                .addEventListeners(new ApplicationManager(), new CommandManager())
+                .addEventListeners(new ApplicationManager(), new CommandManager(), new ShellManager(), new ProfileManager())
                 .build();
         initCommands();
     }

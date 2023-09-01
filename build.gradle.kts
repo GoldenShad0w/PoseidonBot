@@ -6,7 +6,7 @@ plugins {
 
 application.mainClass = "me.goldenshadow.poseidon.Poseidon"
 group = "me.goldenshadow"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
@@ -19,6 +19,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation("net.dv8tion:JDA:$jdaVersion")
     implementation("org.yaml:snakeyaml:2.2")
+    implementation ("com.google.code.gson:gson:2.10.1")
 
 
 }
