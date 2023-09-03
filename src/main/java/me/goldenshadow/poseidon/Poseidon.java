@@ -64,8 +64,9 @@ public class Poseidon {
                         .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MANAGE_SERVER))
                 ,
                 Commands.slash("new-member", "Used to register a new guild member")
-                        .addOption(OptionType.USER, "user", "The user that should be registered")
-                        .addOption(OptionType.STRING, "ign", "The users in game name")
+                        .addOption(OptionType.USER, "user", "The user that should be registered",true)
+                        .addOption(OptionType.STRING, "ign", "The users in game name",true)
+                        .addOption(OptionType.STRING, "rank", "The rank the new user should have", true, true)
                         .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MANAGE_ROLES))
 
         ).queue();

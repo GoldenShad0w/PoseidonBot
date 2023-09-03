@@ -1,5 +1,10 @@
 package me.goldenshadow.poseidon;
 
+import me.goldenshadow.poseidon.profile.Rank;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class Constants {
 
     public static String BOT_TOKEN = "";

@@ -16,9 +16,9 @@ public class Profile {
     private int playtime;
     private Date lastSeen;
 
-    public Profile(String memberID, String ign) {
+    public Profile(String memberID, String ign, Rank rank) {
         this.memberID = memberID;
-        rank = Rank.STARFISH;
+        this.rank = rank;
         inGameName = ign;
         shells = 0;
         playtime = 0;
@@ -32,15 +32,15 @@ public class Profile {
     public void addShells(int amount, String reason) {
         shells += amount;
         shellHistory.add(0, new ShellTransaction(ShellTransaction.TransactionType.ADDITION, amount, reason));
-        if (shellHistory.size() > 10) shellHistory.remove(shellHistory.size()-1);
-        ProfileManager.saveToFile();
+        if (shellHistory.size() > 15) shellHistory.remove(shellHistory.size()-1);
+        ProfileManager.saveToFile(this);
     }
 
     public void removeShells(int amount, String reason) {
         shells -= amount;
         shellHistory.add(0, new ShellTransaction(ShellTransaction.TransactionType.SUBTRACTION, amount, reason));
         if (shellHistory.size() > 10) shellHistory.remove(shellHistory.size()-1);
-        ProfileManager.saveToFile();
+        ProfileManager.saveToFile(this);
     }
 
     public String getInGameName() {

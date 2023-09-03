@@ -13,6 +13,7 @@ import java.io.*;
 import java.lang.reflect.Type;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class ProfileManager extends ListenerAdapter {
     public static void registerProfile(Profile profile) {
         if (!profileHashMap.containsKey(profile.getMemberID())) {
             profileHashMap.put(profile.getMemberID(), profile);
-            ProfileManager.saveToFile();
+            ProfileManager.saveToFile(profile);
         }
     }
 
@@ -40,35 +41,46 @@ public class ProfileManager extends ListenerAdapter {
     public static void loadFromFile() throws FileNotFoundException, URISyntaxException {
         File jar = new File(Poseidon.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
         File dataFolder = new File(jar.getParentFile().getPath() + "/poseidon");
-
-        if (dataFolder.exists()) {
-            File profileFile = new File(dataFolder.getPath() + "/profiles.json");
-            if (profileFile.exists()) {
-
-                Reader reader = new FileReader(profileFile);
-                Gson gson = new GsonBuilder().create();
-                Type type = new TypeToken<HashMap<String, Profile>>(){}.getType();
-                profileHashMap = gson.fromJson(reader, type);
-                if (profileHashMap == null) profileHashMap = new HashMap<>();
-
-            } else {
-                System.out.println("Profiles file could not be found. A new one will be created when data in memory is saved!");
+        File profileFolder = new File(dataFolder.getPath() + "/profiles");
+        if (dataFolder.exists() && dataFolder.isDirectory() && profileFolder.exists() && profileFolder.isDirectory()) {
+            List<File> fileList = new ArrayList<>();
+            File[] files = profileFolder.listFiles();
+            Gson gson = new GsonBuilder().create();
+            if (files != null) {
+                fileList = Arrays.asList(files);
             }
+            HashMap<String, Profile> map = new HashMap<>();
+            for (File file : fileList) {
+                if (file.getName().contains(".json")) {
+                    Reader reader = new FileReader(file);
+                    //Type type = new TypeToken<Profile>() {
+                    //}.getType();
+
+                    Profile profile = gson.fromJson(reader, Profile.class);
+
+                    map.put(profile.getMemberID(), profile);
+                }
+            }
+            profileHashMap = map;
+
+
         } else {
             System.out.println("Data folder could not be found. A new one will be created when data in memory is saved!");
         }
     }
 
-    public static void saveToFile() {
+    public static void saveToFile(Profile p) {
         try {
             Gson gson = new GsonBuilder().create();
             File jar = new File(Poseidon.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
-            File folder = new File(jar.getParentFile().getPath() + "/poseidon");
-            folder.mkdir();
-            File profileFile = new File(folder.getPath() + "/profiles.json");
+            File dataFolder = new File(jar.getParentFile().getPath() + "/poseidon");
+            File profileFolder = new File(dataFolder.getPath() + "/profiles");
+            dataFolder.mkdir();
+            profileFolder.mkdir();
+            File profileFile = new File(profileFolder.getPath() + "/" + p.getMemberID() + ".json");
             profileFile.createNewFile();
             Writer writer = new FileWriter(profileFile, false);
-            gson.toJson(profileHashMap, writer);
+            gson.toJson(p, writer);
             writer.close();
         } catch (URISyntaxException | IOException e) {
             e.printStackTrace();
@@ -80,7 +92,9 @@ public class ProfileManager extends ListenerAdapter {
     @Override
     public void onShutdown(@NotNull ShutdownEvent event) {
         try {
-            saveToFile();
+            for (Profile p : profileHashMap.values()) {
+                saveToFile(p);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
