@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -34,43 +35,45 @@ public class ApplicationManager extends ListenerAdapter {
     public void onMessageReceived(MessageReceivedEvent event) {
         if (event.getGuild().getId().equals(Constants.MAIN_SERVER_ID)) {
             Category c = event.getChannel().asTextChannel().getParentCategory();
-            if (event.getChannel().asTextChannel().getHistoryFromBeginning(10).complete().size() == 2) {
-                if (c != null && c.getId().equals(Constants.MAIN_APPLICATION_CATEGORY_ID)) {
-                    Guild staffServer = Poseidon.getApi().getGuildById(Constants.STAFF_SERVER_ID);
-                    if (staffServer != null) {
-                        TextChannel applicationChannel = staffServer.getTextChannelById(Constants.STAFF_APPLICATION_CHANNEL_ID);
-                        if (applicationChannel != null) {
+            if (event.getChannel().getType() == ChannelType.TEXT) {
+                if (event.getChannel().asTextChannel().getHistoryFromBeginning(10).complete().size() == 2) {
+                    if (c != null && c.getId().equals(Constants.MAIN_APPLICATION_CATEGORY_ID)) {
+                        Guild staffServer = Poseidon.getApi().getGuildById(Constants.STAFF_SERVER_ID);
+                        if (staffServer != null) {
+                            TextChannel applicationChannel = staffServer.getTextChannelById(Constants.STAFF_APPLICATION_CHANNEL_ID);
+                            if (applicationChannel != null) {
 
-                            MessageEmbed embed = new EmbedBuilder()
-                                    .setTitle("Application " + event.getChannel().getName().replaceAll(".*-", ""))
-                                    .setDescription(event.getChannel().asTextChannel().getJumpUrl() + "\n" + "**Status:** `open`")
-                                    .setColor(Color.cyan)
-                                    .build();
+                                MessageEmbed embed = new EmbedBuilder()
+                                        .setTitle("Application " + event.getChannel().getName().replaceAll(".*-", ""))
+                                        .setDescription(event.getChannel().asTextChannel().getJumpUrl() + "\n" + "**Status:** `open`")
+                                        .setColor(Color.cyan)
+                                        .build();
 
-                            MessageCreateData data = new MessageCreateBuilder()
-                                    .addContent("<@&" + Constants.STAFF_APPLICATION_ROLE_ID + ">")
-                                    .setAllowedMentions(List.of(Message.MentionType.ROLE))
-                                    .addEmbeds(List.of(embed))
-                                    .build();
+                                MessageCreateData data = new MessageCreateBuilder()
+                                        .addContent("<@&" + Constants.STAFF_APPLICATION_ROLE_ID + ">")
+                                        .setAllowedMentions(List.of(Message.MentionType.ROLE))
+                                        .addEmbeds(List.of(embed))
+                                        .build();
 
-                            MessageCreateAction messageCreateAction = applicationChannel.sendMessage(data);
+                                MessageCreateAction messageCreateAction = applicationChannel.sendMessage(data);
 
-                            Message m = messageCreateAction.complete();
-                            m.addReaction(Emoji.fromUnicode("👍")).complete();
-                            m.addReaction(Emoji.fromUnicode("🤷‍♂️")).complete();
-                            m.addReaction(Emoji.fromUnicode("👎")).complete();
-                            ThreadChannelAction threadChannelAction = m.createThreadChannel(event.getChannel().getName().replaceAll(".*-", ""));
-                            ThreadChannel threadChannel = threadChannelAction.complete();
+                                Message m = messageCreateAction.complete();
+                                m.addReaction(Emoji.fromUnicode("👍")).complete();
+                                m.addReaction(Emoji.fromUnicode("🤷‍♂️")).complete();
+                                m.addReaction(Emoji.fromUnicode("👎")).complete();
+                                ThreadChannelAction threadChannelAction = m.createThreadChannel(event.getChannel().getName().replaceAll(".*-", ""));
+                                ThreadChannel threadChannel = threadChannelAction.complete();
 
-                            cachedChannels.put(event.getChannel().getId(), new ApplicationData(m.getId(), embed, event.getChannel().asTextChannel().getJumpUrl()));
+                                cachedChannels.put(event.getChannel().getId(), new ApplicationData(m.getId(), embed, event.getChannel().asTextChannel().getJumpUrl()));
 
-                            MessageCreateData reminder = new MessageCreateBuilder()
-                                    .addContent("<@&" + Constants.STAFF_APPLICATION_ROLE_ID + "> 8 hours since app creation!")
-                                    .setAllowedMentions(List.of(Message.MentionType.ROLE))
-                                    .build();
+                                MessageCreateData reminder = new MessageCreateBuilder()
+                                        .addContent("<@&" + Constants.STAFF_APPLICATION_ROLE_ID + "> 8 hours since app creation!")
+                                        .setAllowedMentions(List.of(Message.MentionType.ROLE))
+                                        .build();
 
-                            if (threadChannel != null) {
-                                threadChannel.sendMessage(reminder).completeAfter(8, TimeUnit.HOURS);
+                                if (threadChannel != null) {
+                                    threadChannel.sendMessage(reminder).queueAfter(8, TimeUnit.HOURS);
+                                }
                             }
                         }
                     }

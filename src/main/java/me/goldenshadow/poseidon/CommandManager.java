@@ -6,8 +6,9 @@ import me.goldenshadow.poseidon.profile.Rank;
 import me.goldenshadow.poseidon.shells.ShellManager;
 import me.goldenshadow.poseidon.shells.ShellTransaction;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -20,6 +21,7 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,6 +65,10 @@ public class CommandManager extends ListenerAdapter {
                 }
             }
             else if (event.getSubcommandName() != null && event.getSubcommandName().equals("leaderboard")) {
+                if (ProfileManager.getProfiles().isEmpty()) {
+                    event.reply("Nothing to show yet...").queue();
+                    return;
+                }
                 event.reply(new MessageCreateBuilder().addEmbeds(ShellManager.getShellLeaderboard(1)).build()).setEphemeral(true).addActionRow(
                         Button.primary("poseidon_sh_lb_back", Emoji.fromUnicode("◀️")).asEnabled(),
                         Button.primary("poseidon_sh_lb_forward", Emoji.fromUnicode("▶️")).asEnabled()
@@ -122,7 +128,7 @@ public class CommandManager extends ListenerAdapter {
                     event.reply("Not a valid user!").setEphemeral(true).queue();
                 }
             }
-        } else if (event.getName().equals("new-member")) {
+        } else if (event.getName().equals("register-member")) {
             OptionMapping userOption = event.getOption("user");
             OptionMapping ignOption = event.getOption("ign");
             OptionMapping rankOption = event.getOption("rank");
@@ -146,6 +152,117 @@ public class CommandManager extends ListenerAdapter {
                     event.reply("This user already has a profile!").setEphemeral(true).queue();
                 }
             }
+        } else if (event.getName().equals("new-member")) {
+            OptionMapping userOption = event.getOption("user");
+            OptionMapping ignOption = event.getOption("ign");
+            if (userOption == null || ignOption == null) {
+                event.reply("Params cannot be null!").setEphemeral(true).queue();
+                return;
+            }
+            Member m = userOption.getAsMember();
+            if (m != null) {
+
+                if (ProfileManager.getProfile(m.getId()) == null) {
+                    ProfileManager.registerProfile(new Profile(m.getId(), ignOption.getAsString(), Rank.STARFISH));
+                    Guild guild = Poseidon.getApi().getGuildById(Constants.MAIN_SERVER_ID);
+                    assert guild != null;
+
+                    Arrays.stream(Constants.STARFISH_ROLES).forEach(r -> {
+                        Role role = guild.getRoleById(r);
+                        if (role != null) {
+                            guild.addRoleToMember(m.getUser(), role).queue();
+                        }
+                    });
+                    Arrays.stream(Constants.COMMON_ROLES).forEach(r -> {
+                        Role role = guild.getRoleById(r);
+                        if (role != null) {
+                            guild.addRoleToMember(m.getUser(), role).queue();
+                        }
+                    });
+
+
+                    guild.modifyNickname(m, Rank.STARFISH.prefix + ignOption.getAsString()).queue();
+
+                    TextChannel channel = guild.getTextChannelById(Constants.MAIN_GUILD_GENERAL_CHANNEL_ID);
+                    assert channel != null;
+                    channel.sendMessage(new MessageCreateBuilder().setContent(m.getAsMention() + " has joined the guild - Say hi!").setAllowedMentions(List.of(Message.MentionType.USER)).build()).queue();
+
+                    event.reply("Registered new member and applied roles!").setEphemeral(true).queue();
+                } else {
+                    event.reply("This user already has a profile!").setEphemeral(true).queue();
+                }
+            }
+        }  else if (event.getName().equals("reset-roles")) {
+            OptionMapping userOption = event.getOption("user");
+            if (userOption == null) {
+                event.reply("Params cannot be null!").setEphemeral(true).queue();
+                return;
+            }
+            Member m = userOption.getAsMember();
+            if (m != null) {
+
+                Guild guild = Poseidon.getApi().getGuildById(Constants.MAIN_SERVER_ID);
+                assert guild != null;
+                m.getRoles().forEach(x -> guild.removeRoleFromMember(m.getUser(), x).queue());
+
+                Role exMemberRole = guild.getRoleById(Constants.EX_MEMBER_ROLE);
+                assert exMemberRole != null;
+                guild.addRoleToMember(m.getUser(), exMemberRole).queue();
+                guild.modifyNickname(m, null).queue();
+                event.reply("Reset roles of user!").setEphemeral(true).queue();
+
+            }
+        } else if (event.getName().equals("set-rank")) {
+            OptionMapping userOption = event.getOption("user");
+            OptionMapping rankOption = event.getOption("rank");
+            if (userOption == null || rankOption == null) {
+                event.reply("Params cannot be null!").setEphemeral(true).queue();
+                return;
+            }
+            Member m = userOption.getAsMember();
+            if (m != null) {
+                Rank rank;
+                try {
+                    rank = Rank.valueOf(rankOption.getAsString().toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    event.reply("Not a valid rank!").queue();
+                    return;
+                }
+                if (ProfileManager.getProfile(m.getId()) != null) {
+
+                    Profile p = ProfileManager.getProfile(m.getId());
+                    assert p != null;
+                    p.setRank(rank);
+                    Guild guild = Poseidon.getApi().getGuildById(Constants.MAIN_SERVER_ID);
+                    assert guild != null;
+
+                    List<Role> roleList = new ArrayList<>(m.getRoles());
+
+                    for (Rank r : Rank.values()) {
+                        Arrays.stream(r.getRoles()).forEach(x -> {
+                            Role role = guild.getRoleById(x);
+                            if (role != null) {
+                                roleList.remove(role);
+                            }
+                        });
+                    }
+
+                    Arrays.stream(rank.getRoles()).forEach(r -> {
+                        Role role = guild.getRoleById(r);
+                        if (role != null) {
+                            roleList.add(role);
+                        }
+                    });
+
+                    guild.modifyMemberRoles(m, roleList).queue();
+
+                    guild.modifyNickname(m, rank.prefix + p.getInGameName()).queue();
+
+                    event.reply("Set rank!").setEphemeral(true).queue();
+                } else {
+                    event.reply("This user doesn't have a profile!").setEphemeral(true).queue();
+                }
+            }
         }
     }
 
@@ -154,7 +271,7 @@ public class CommandManager extends ListenerAdapter {
 
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent event) {
-        if (event.getName().equals("new-member") && event.getFocusedOption().getName().equals("rank")) {
+        if ((event.getName().equals("register-member") || event.getName().equals("set-rank")) && event.getFocusedOption().getName().equals("rank")) {
             List<Command.Choice> options = Stream.of(Rank.getStringValues())
                     .filter(word -> word.startsWith(event.getFocusedOption().getValue())) // only display words that start with the user's current input
                     .map(word -> new Command.Choice(word, word)) // map the words to choices

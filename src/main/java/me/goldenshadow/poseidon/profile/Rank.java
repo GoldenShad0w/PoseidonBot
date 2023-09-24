@@ -1,5 +1,7 @@
 package me.goldenshadow.poseidon.profile;
 
+import me.goldenshadow.poseidon.Constants;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +22,7 @@ public enum Rank {
         this.prefix = prefix;
     }
 
-    private final String prefix;
+    public final String prefix;
 
     public static String[] getStringValues() {
         List<String> list = new ArrayList<>();
@@ -28,5 +30,20 @@ public enum Rank {
             list.add(r.toString());
         }
         return list.toArray(String[]::new);
+    }
+
+    public String[] getRoles() {
+        return switch (this) {
+            case STARFISH -> Constants.STARFISH_ROLES;
+            case MANATEE -> Constants.MANATEE_ROLES;
+            case PIRANHA -> Constants.PIRANHA_ROLES;
+            case BARRACUDA -> Constants.BARRACUDA_ROLES;
+            case ANGLER -> Constants.ANGLER_ROLES;
+            case HAMMERHEAD -> Constants.HAMMERHEAD_ROLES;
+            case SAILFISH -> Constants.SAILFISH_ROLES;
+            case DOLPHIN -> Constants.DOLPHIN_ROLES;
+            case NARWHAL -> Constants.NARWHAL_ROLES;
+            case HYDRA, NONE -> new String[]{};
+        };
     }
 }

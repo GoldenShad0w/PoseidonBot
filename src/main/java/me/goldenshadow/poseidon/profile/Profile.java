@@ -58,5 +58,13 @@ public class Profile {
     public List<ShellTransaction> getShellHistory() {
         return shellHistory;
     }
+
+    public Rank getRank() {
+        return rank;
+    }
+
+    public void setRank(Rank rank) {
+        this.rank = rank;
+    }
 }
 
