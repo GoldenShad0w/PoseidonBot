@@ -1,2 +1,3 @@
-# I wrote this in like 2 days so yeah, it might be bad
+# PoseidonBot
 
+Poseidon bot is the discord managment bot of TAq
