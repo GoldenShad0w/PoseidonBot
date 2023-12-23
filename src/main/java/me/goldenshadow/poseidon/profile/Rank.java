@@ -1,6 +1,8 @@
 package me.goldenshadow.poseidon.profile;
 
+
 import me.goldenshadow.poseidon.Constants;
+import me.goldenshadow.wynnapi.v3.guild.data.GuildRank;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,4 +48,18 @@ public enum Rank {
             case HYDRA, NONE -> new String[]{};
         };
     }
+
+
+    public GuildRank getWynncraftRank() {
+        return switch (this) {
+            case STARFISH, NONE -> GuildRank.RECRUIT;
+            case MANATEE -> GuildRank.RECRUITER;
+            case PIRANHA, BARRACUDA -> GuildRank.CAPTAIN;
+            case ANGLER, SAILFISH, HAMMERHEAD -> GuildRank.STRATEGIST;
+            case DOLPHIN, NARWHAL -> GuildRank.CHIEF;
+            case HYDRA -> GuildRank.OWNER;
+        };
+    }
+
+
 }

@@ -1,4 +1,4 @@
-package me.goldenshadow.poseidon.shells;
+package me.goldenshadow.poseidon.utils;
 
 import org.jetbrains.annotations.Nullable;
 
