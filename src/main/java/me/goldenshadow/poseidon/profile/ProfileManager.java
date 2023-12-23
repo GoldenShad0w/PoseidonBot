@@ -4,6 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import me.goldenshadow.poseidon.Poseidon;
+import me.goldenshadow.poseidon.utils.DataProvider;
+import me.goldenshadow.wynnapi.v3.guild.WynncraftGuild;
+import me.goldenshadow.wynnapi.v3.player.WynncraftPlayer;
 import net.dv8tion.jda.api.events.session.ShutdownEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -12,10 +15,8 @@ import org.jetbrains.annotations.Nullable;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProfileManager extends ListenerAdapter {
 
@@ -33,8 +34,24 @@ public class ProfileManager extends ListenerAdapter {
         return profileHashMap.getOrDefault(memberID, null);
     }
 
-    public static List<Profile> getProfiles() {
-        return new ArrayList<>(profileHashMap.values());
+    @Nullable
+    public static Profile getProfileOverIGN(String ign) {
+        for (Profile p : profileHashMap.values()) {
+            if (p.getInGameName().equals(ign)) return p;
+        }
+        return null;
+    }
+
+    public static List<Profile> getProfiles(boolean includeWithoutUUID) {
+        if (includeWithoutUUID) {
+            return new ArrayList<>(profileHashMap.values());
+        } else {
+            return profileHashMap.values().stream().filter(Profile::isUUIDPresent).collect(Collectors.toList());
+        }
+    }
+
+    public static List<Profile> getGuildMemberProfiles(boolean includeWithoutUUID) {
+        return getProfiles(includeWithoutUUID).stream().filter(p -> Poseidon.getDataProvider().isInGuild(p.getMcUUID())).collect(Collectors.toList());
     }
 
 
@@ -53,15 +70,20 @@ public class ProfileManager extends ListenerAdapter {
             for (File file : fileList) {
                 if (file.getName().contains(".json")) {
                     Reader reader = new FileReader(file);
-                    //Type type = new TypeToken<Profile>() {
-                    //}.getType();
 
                     Profile profile = gson.fromJson(reader, Profile.class);
 
+
+
                     map.put(profile.getMemberID(), profile);
+
+                    System.out.println("Loaded profile of " + profile.getInGameName() + " (UUID: " + profile.isUUIDPresent() + ")");
                 }
             }
             profileHashMap = map;
+
+
+
 
 
         } else {
@@ -70,6 +92,7 @@ public class ProfileManager extends ListenerAdapter {
     }
 
     public static void saveToFile(Profile p) {
+
         try {
             Gson gson = new GsonBuilder().create();
             File jar = new File(Poseidon.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
@@ -85,7 +108,6 @@ public class ProfileManager extends ListenerAdapter {
         } catch (URISyntaxException | IOException e) {
             e.printStackTrace();
         }
-
     }
 
     @SuppressWarnings("CallToPrintStackTrace")
@@ -97,6 +119,22 @@ public class ProfileManager extends ListenerAdapter {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void updatePlayData() {
+        for (Profile profile : getProfiles(false)) {
+            if (Poseidon.getDataProvider().isInGuild(profile.getMcUUID())) {
+                Poseidon.getDataProvider().updateData(profile);
+            }
+        }
+    }
+
+    public static void clearPlayData() {
+        for (Profile profile : getProfiles(false)) {
+            if (Poseidon.getDataProvider().isInGuild(profile.getMcUUID())) {
+                profile.clearData();
+            }
         }
     }
 }
