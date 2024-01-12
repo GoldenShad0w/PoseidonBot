@@ -85,13 +85,26 @@ public class DataProvider {
                 profileList.sort(Comparator.comparingLong(p -> p.getPlayData(-1).playtime()));
                 Collections.reverse(profileList);
                 for (int i = 0; i < profileList.size(); i++) {
-                    list.add(format.formatted((i + 1), profileList.get(i).getInGameName(), (int) (profileList.get(i).getPlayData(-1).playtime() * 4.7 / 60) + "h"));
+                    list.add(format.formatted((i + 1), profileList.get(i).getInGameName(), (int) (profileList.get(i).getPlayData(-1).playtime()) + "h"));
                 }
             }
             case INACTIVITY -> {
                 profileList.sort(Comparator.comparing(Profile::getLastSeen).reversed());
                 for (int i = 0; i < profileList.size(); i++) {
                     list.add(format.formatted((i + 1), profileList.get(i).getInGameName(), formatDate(profileList.get(i).getLastSeen())));
+                }
+            }
+            case CONTRIBUTION -> {
+                profileList.removeIf(p -> p.getRank().ordinal() > 3);
+                profileList.sort(Comparator.comparingDouble(p -> {
+                    PlayData d = p.getPlayData(-1);
+                    return (d.wars() * 10) + ((double) p.getShells() / 10) + ((double) d.xp() / 1000000) + d.playtime();
+                }));
+                Collections.reverse(profileList);
+                for (int i = 0; i < profileList.size(); i++) {
+                    PlayData d = profileList.get(i).getPlayData(-1);
+                    String s = "Wars: " + d.wars() + " | Shells: " + profileList.get(i).getShells() + " | Playtime: " + d.playtime() + "h | XP: " + d.getFriendlyXP() + " | Rank: " + profileList.get(i).getRank().toString();
+                    list.add(format.formatted((i + 1), profileList.get(i).getInGameName(), s));
                 }
             }
         }
@@ -130,7 +143,20 @@ public class DataProvider {
                 profileList.sort(Comparator.comparingLong(p -> p.getPlayData(days).playtime()));
                 Collections.reverse(profileList);
                 for (int i = 0; i < profileList.size(); i++) {
-                    list.add(format.formatted((i + 1), profileList.get(i).getInGameName(), (int) (profileList.get(i).getPlayData(days).playtime() * 4.7 / 60) + "h"));
+                    list.add(format.formatted((i + 1), profileList.get(i).getInGameName(), (int) (profileList.get(i).getPlayData(days).playtime()) + "h"));
+                }
+            }
+            case CONTRIBUTION -> {
+                profileList.removeIf(p -> p.getRank().ordinal() > 3);
+                profileList.sort(Comparator.comparingDouble(p -> {
+                    PlayData d = p.getPlayData(days);
+                    return (d.wars() * 10) + ((double) d.shells() / 10) + ((double) d.xp() / 1000000) + d.playtime();
+                }));
+                Collections.reverse(profileList);
+                for (int i = 0; i < profileList.size(); i++) {
+                    PlayData d = profileList.get(i).getPlayData(days);
+                    String s = "Wars: " + d.wars() + " | Shells: " + d.shells() + " | Playtime: " + d.playtime() + "h | XP: " + d.getFriendlyXP() + " | Rank: " + profileList.get(i).getRank().toString();
+                    list.add(format.formatted((i + 1), profileList.get(i).getInGameName(), s));
                 }
             }
         }
@@ -169,7 +195,7 @@ public class DataProvider {
         s = s.concat("**Shells: **" + data.shells() + "\n");
         s = s.concat("**Wars: **" + data.wars() + "\n");
         s = s.concat("**XP Donated: **" + data.xp() + "\n");
-        s = s.concat("**Playtime: **" + (int) (data.playtime()  * 4.7 / 60) + "h\n");
+        s = s.concat("**Playtime: **" + (int) (data.playtime()) + "h\n");
 
 
         return new EmbedBuilder()
@@ -184,7 +210,9 @@ public class DataProvider {
         PLAYTIME(Color.blue, "Playtime"),
         SHELLS(Color.orange, "Shells"),
         INACTIVITY(Color.magenta, "Inactivity"),
-        XP(Color.green, "Guild XP");
+        XP(Color.green, "Guild XP"),
+        CONTRIBUTION(Color.yellow, "Contribution");
+
 
         private final Color c;
         private final String displayName;
@@ -213,7 +241,7 @@ public class DataProvider {
     private String formatDate(Date date) {
         Instant i = Instant.now();
         long d = Duration.between(date.toInstant(), i).abs().toDays();
-        return d > 0 ? d + " days ago" : "Less than a day";
+        return d > 0 ? d + " days" : "Less than a day";
     }
 
 }

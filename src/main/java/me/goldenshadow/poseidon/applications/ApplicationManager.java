@@ -49,21 +49,25 @@ public class ApplicationManager extends ListenerAdapter {
                                 TextChannel applicationChannel = staffServer.getTextChannelById(Constants.STAFF_APPLICATION_CHANNEL_ID);
                                 if (applicationChannel != null) {
 
-                                    String ign = null;
-                                    Pattern linkPattern = Pattern.compile("https://wynncraft\\.com/stats/player/(\\w+)");
+                                    String key = null;
+                                    Pattern linkPattern = Pattern.compile("https://wynncraft\\.com/stats/player/([\\w-]+)");
                                     Matcher matcher = linkPattern.matcher(event.getMessage().getContentRaw());
                                     if (matcher.find()) {
-                                        ign = matcher.group().replace("https://wynncraft.com/stats/player/", "");
+                                        key = matcher.group().replace("https://wynncraft.com/stats/player/", "");
                                     }
 
                                     WynncraftPlayer player = null;
-                                    if (ign != null) {
+                                    if (key != null) {
                                         try {
-                                            player = Poseidon.getWynnAPI().v3().player().mainStats(ign).run();
-                                        } catch (APIException ignored) {}
+                                            player = Poseidon.getWynnAPI().v3().player().mainStatsUUID(key).run();
+                                        } catch (APIException e) {
+                                            try {
+                                                player = Poseidon.getWynnAPI().v3().player().mainStats(key).run();
+                                            } catch (APIException ignored) {}
+                                        }
                                     }
 
-                                    String desc = event.getChannel().asTextChannel().getJumpUrl() + "\n**Status:** `%s`\n**Wynn First Join: ** `" + (player != null ? player.firstJoin().toString() : "Unknown") + "`\n**Wynn Total Playtime: **`" + (player != null ? (int) (player.playtime() * 4.7 / 60) + "h" : "Unknown") + "`\n**Wynn Total Wars: **`" + (player != null ? player.globalData().wars() : "Unknown") + "`" + (ign != null && Constants.BLACKLIST.contains(ign) ? "\n⚠️ **Player is on ANO blacklist** ⚠️" : "");
+                                    String desc = event.getChannel().asTextChannel().getJumpUrl() + "\n**Status:** `%s`\n**Wynn First Join: ** `" + (player != null ? player.firstJoin().toString() : "Unknown") + "`\n**Wynn Total Playtime: **`" + (player != null ? (int) (player.playtime() * 4.7 / 60) + "h" : "Unknown") + "`\n**Wynn Total Wars: **`" + (player != null ? player.globalData().wars() : "Unknown") + "`" + (player != null ? player.username() != null && Constants.BLACKLIST.contains(player.username()) ? "\n⚠️ **Player is on ANO blacklist** ⚠️" : "" : "");
 
 
 
