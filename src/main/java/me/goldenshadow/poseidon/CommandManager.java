@@ -212,6 +212,12 @@ public class CommandManager extends ListenerAdapter {
                 guild.modifyMemberRoles(m, exMemberRole).queue();
                 guild.modifyNickname(m, null).queue();
 
+                Profile p = ProfileManager.getProfile(m.getId());
+                if (p != null) {
+                    p.setRank(Rank.NONE);
+                    p.clearData();
+                }
+
                 event.reply("Reset roles of user!").setEphemeral(true).queue();
             }
         }
